@@ -16,6 +16,12 @@ ENV GOROOT="/usr/local/go"
 ENV GOPATH=$HOME/go
 ENV PATH="${PATH}:${GOROOT}/bin:${GOPATH}/bin"
 
+# Replace Source:apt
+RUN sed -i 's/cn.archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+RUN sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+RUN apt update -y
+	
+
 # Install Python
 RUN apt update -y && \
     apt update -y && \
@@ -47,14 +53,16 @@ RUN apt install -y  --no-install-recommends \
 
 RUN add-apt-repository ppa:mozillateam/ppa
 
-# Download and install go 1.20
-RUN wget https://golang.org/dl/go1.21.4.linux-amd64.tar.gz
+# Download and install go 1.21
+RUN wget https://mirrors.aliyun.com/golang/go1.21.4.linux-amd64.tar.gz
 RUN tar -xvf go1.21.4.linux-amd64.tar.gz
 RUN rm go1.21.4.linux-amd64.tar.gz
 RUN mv go /usr/local
+RUN go env -w GO111MODULE=on
+RUN go env -w  GOPROXY=https://goproxy.cn,direct
 
 # Download geckodriver
-RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
+RUN wget https://mirrors.huaweicloud.com/geckodriver/v0.32.0/geckodriver-v0.32.0-linux64.tar.gz
 RUN tar -xvf geckodriver-v0.32.0-linux64.tar.gz
 RUN rm geckodriver-v0.32.0-linux64.tar.gz
 RUN mv geckodriver /usr/bin
@@ -97,6 +105,15 @@ RUN subfinder -up
 RUN tlsx -up
 RUN katana -up
 
+# Replace Source:pip
+RUN mkdir -p ~/.pip
+RUN echo '[global]\n\
+index-url=http://pypi.douban.com/simple\n\
+[install]\n\
+trusted-host=pypi.douban.com\n'\
+> ~/.pip/pip.conf
+	
+
 # Copy requirements
 COPY ./requirements.txt /tmp/requirements.txt
 RUN pip3 install --upgrade setuptools pip && \
@@ -104,7 +121,6 @@ RUN pip3 install --upgrade setuptools pip && \
 
 
 # install eyewitness
-
 RUN python3 -m pip install fuzzywuzzy \
     selenium==4.9.1 \
     python-Levenshtein \
